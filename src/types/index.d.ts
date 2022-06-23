@@ -1,0 +1,1 @@
+import * as RPCProvider from "../index";
