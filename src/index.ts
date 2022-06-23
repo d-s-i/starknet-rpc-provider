@@ -51,12 +51,12 @@ export class RPCProvider implements ProviderInterface {
         throw new Error("RPCProvider::getStorageAt - Function not implemented yet");
     }
 
-    async callContract(invokeTransaction: Call, options: { blockIdentifier: BlockIdentifier; }): Promise<CallContractResponse> {
+    async callContract(invokeTransaction: Call, options?: { blockIdentifier: BlockIdentifier; }): Promise<CallContractResponse> {
         const _res = await this.request("starknet_call", [{
             contract_address: invokeTransaction.contractAddress,
             entry_point_selector: getSelectorFromName(invokeTransaction.entrypoint),
             calldata: invokeTransaction.calldata || []
-        }, options.blockIdentifier /* blockHash */]);
+        },  options ? { blockIdentifier: options.blockIdentifier } : {} /* blockHash */]);
         return { result: _res };
     }
     
