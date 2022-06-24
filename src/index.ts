@@ -56,7 +56,7 @@ export class RPCProvider implements ProviderInterface {
             contract_address: invokeTransaction.contractAddress,
             entry_point_selector: getSelectorFromName(invokeTransaction.entrypoint),
             calldata: invokeTransaction.calldata || []
-        },  options ? { blockIdentifier: options.blockIdentifier } : {} /* blockHash */]);
+        },  options?.blockIdentifier || "" /* blockHash */]);
         return { result: _res };
     }
     

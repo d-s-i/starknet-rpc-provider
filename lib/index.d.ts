@@ -13,7 +13,7 @@ export declare class RPCProvider implements ProviderInterface {
     request(method: string, params: any[]): Promise<any>;
     getContractAddresses(): Promise<GetContractAddressesResponse>;
     getStorageAt(contractAddress: string, key: number, blockIdentifier?: BlockIdentifier): Promise<object>;
-    callContract(invokeTransaction: Call, options: {
+    callContract(invokeTransaction: Call, options?: {
         blockIdentifier: BlockIdentifier;
     }): Promise<CallContractResponse>;
     getLatestBlockNumber(): Promise<any>;
