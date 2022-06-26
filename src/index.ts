@@ -61,7 +61,7 @@ export class RPCProvider implements ProviderInterface {
             const latestBlock = await this.getBlock(latestBlockNumber);
             blockHash = latestBlock.block_hash;
         } else { blockHash = options.blockIdentifier }
-        console.log(`Calling with block hash ${blockHash}`);
+        
         const _res = await this.request("starknet_call", [{
             contract_address: invokeTransaction.contractAddress,
             entry_point_selector: getSelectorFromName(invokeTransaction.entrypoint),
