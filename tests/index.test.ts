@@ -1,14 +1,25 @@
 import dotenv from "dotenv";
 dotenv.config();
+import assert from "assert";
 import { RPCProvider } from "../src";
 
-const test = async function() {
-    const provider = new RPCProvider(process.env.NODE_URL!, "testnet");
+describe("RPCProvider", function() {
+    it("Call a contract with a blockIdentifier", async function() {
+        const provider = new RPCProvider(process.env.NODE_URL!, "testnet");
 
-    const res = await provider.callContract({
-        contractAddress: "0x041328d6d36a71d2c63d8dbea207799c3ec24faa394f2a9faf18a6102e9c3903",
-        entrypoint: "get_all_s_realms_owners_arr"
-    }, { blockIdentifier: "0xb3d577409d6f73bfd0eddc73765ef75ec605fdcd98fac75781348d68423bce" });
-    console.log("res", res);
-}
-test();
+        const res = await provider.callContract({
+            contractAddress: "0x07b2167313597992fce81632ef1dd7dfaf82e820f3102a7782ebad338ac5dfed",
+            entrypoint: "get_all_s_realms_owners"
+        }, { blockIdentifier: 251260 });
+        console.log("res", res);
+    });
+    it("Call a contract without a blockIdentifier", async function() {
+        const provider = new RPCProvider(process.env.NODE_URL!, "testnet");
+
+        const res = await provider.callContract({
+            contractAddress: "0x07b2167313597992fce81632ef1dd7dfaf82e820f3102a7782ebad338ac5dfed",
+            entrypoint: "get_all_s_realms_owners"
+        });
+        console.log("res", res);
+    });
+});

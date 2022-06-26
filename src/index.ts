@@ -52,11 +52,21 @@ export class RPCProvider implements ProviderInterface {
     }
 
     async callContract(invokeTransaction: Call, options?: { blockIdentifier: BlockIdentifier; }): Promise<CallContractResponse> {
+        let blockHash;
+        if(
+            !options?.blockIdentifier || 
+            (typeof(options.blockIdentifier) === "number" || options.blockIdentifier === "pending" || options.blockIdentifier === "latest")
+        ) {
+            const latestBlockNumber = typeof(options?.blockIdentifier) === "number" ? options.blockIdentifier : await this.getLatestBlockNumber();
+            const latestBlock = await this.getBlock(latestBlockNumber);
+            blockHash = latestBlock.block_hash;
+        } else { blockHash = options.blockIdentifier }
+        console.log(`Calling with block hash ${blockHash}`);
         const _res = await this.request("starknet_call", [{
             contract_address: invokeTransaction.contractAddress,
             entry_point_selector: getSelectorFromName(invokeTransaction.entrypoint),
             calldata: invokeTransaction.calldata || []
-        },  options?.blockIdentifier || "" /* blockHash */]);
+        }, blockHash]);
         return { result: _res };
     }
     
