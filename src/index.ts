@@ -74,7 +74,7 @@ export class RPCProvider implements ProviderInterface {
         return this.request("starknet_blockNumber", []);
     }
 
-    async getTransactionStatus(txHash: BigNumberish): Promise<GetTransactionStatusResponse> {
+    async getTransactionStatus(txHash: BigNumberish): Promise<any /*GetTransactionStatusResponse*/> {
         throw new Error("RPCProvider::getTransactionStatus - Function not implemented yet");
     }
 
