@@ -1,5 +1,5 @@
 import { BigNumberish } from "starknet/utils/number";
-import { AddTransactionResponse, Call, CallContractResponse, DeployContractPayload, GetContractAddressesResponse, GetTransactionStatusResponse, GetTransactionTraceResponse, Invocation, ProviderInterface, TransactionReceiptResponse } from "starknet";
+import { AddTransactionResponse, Call, CallContractResponse, DeployContractPayload, GetContractAddressesResponse, GetTransactionTraceResponse, Invocation, ProviderInterface, TransactionReceiptResponse } from "starknet";
 import { StarknetChainId } from "starknet/constants";
 import { BlockIdentifier } from "starknet/dist/provider/utils";
 export declare class RPCProvider implements ProviderInterface {
@@ -17,7 +17,7 @@ export declare class RPCProvider implements ProviderInterface {
         blockIdentifier: BlockIdentifier;
     }): Promise<CallContractResponse>;
     getLatestBlockNumber(): Promise<any>;
-    getTransactionStatus(txHash: BigNumberish): Promise<GetTransactionStatusResponse>;
+    getTransactionStatus(txHash: BigNumberish): Promise<any>;
     getTransactionReceipt({ txHash, txId, }: {
         txHash?: BigNumberish;
         txId?: BigNumberish;
