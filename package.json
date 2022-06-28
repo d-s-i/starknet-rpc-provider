@@ -1,6 +1,6 @@
 {
   "name": "starknet-rpc-provider",
-  "version": "1.0.44",
+  "version": "1.0.45",
   "description": "",
   "main": "index.js",
   "scripts": {
