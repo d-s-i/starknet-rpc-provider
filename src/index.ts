@@ -87,32 +87,15 @@ export class RPCProvider implements ProviderInterface {
         return receipt;
     }
     
-    async getBlock(blockNumber: number | string) {
+    async getBlock(blockNumber: number | "latest") {
         let _blockNumber;
-        if(blockNumber === "pending") {
-            _blockNumber = (await this.getLatestBlockNumber()) - 1;
+        if(blockNumber === "latest") {
+            _blockNumber = await this.getLatestBlockNumber();
         } else {
             _blockNumber = +blockNumber;
         }
-        const _block = await this.request("starknet_getBlockByNumber", [_blockNumber]);
-        let transactions = [];
-        let transaction_receipts = [];
-        for(const txHash of _block.transactions) {
-
-            const tx = await this.getTransaction(txHash);            
-            const receipt = await this.getTransactionReceipt({ txHash });
-
-            const transactionsArrLength = transactions.push(tx);
-            transaction_receipts.push({
-                ...receipt,
-                transaction_index: transactionsArrLength - 1
-            });
-        }
-        return {
-            ..._block,
-            transactions,
-            transaction_receipts
-        };
+        const block = await this.request("starknet_getBlockByNumber", [_blockNumber, "FULL_TXN_AND_RECEIPTS"]);
+        return block;
     }
 
     async getPendingTransactions() {

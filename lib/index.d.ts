@@ -18,12 +18,21 @@ export declare class RPCProvider implements ProviderInterface {
     }): Promise<CallContractResponse>;
     getLatestBlockNumber(): Promise<any>;
     getTransactionStatus(txHash: BigNumberish): Promise<any>;
-    getTransactionReceipt({ txHash, txId, }: {
-        txHash?: BigNumberish;
-        txId?: BigNumberish;
-    }): Promise<TransactionReceiptResponse>;
-    getBlock(blockNumber: number | string): Promise<any>;
+    getTransactionReceipt(txHash: BigNumberish): Promise<TransactionReceiptResponse>;
+    getBlock(blockNumber: number | "latest"): Promise<any>;
+    getPendingTransactions(): Promise<any>;
+    /**
+     * Properties missing:
+     * ANY TRANSACTIONS:
+     * status, block_hash, block_number, transaction_index
+     * INVOKE TRANSCACTIONS:
+     * transaction.entry_point_type (partial), transaction.signature
+     * DEPLOY TRANSACTION:
+     * transaction.contract_address_salt, transaction.constructor_calldata
+     */
     getTransaction(txHash: BigNumberish): Promise<any>;
+    getClassHashAt(contractAddress: string): Promise<any>;
+    getClassAt(contractAddress: string): Promise<any>;
     getTransactionTrace(txHash: BigNumberish): Promise<GetTransactionTraceResponse>;
     getCode(contractAddress: string): Promise<{
         bytecode: any;
@@ -33,6 +42,8 @@ export declare class RPCProvider implements ProviderInterface {
     invokeFunction(invocation: Invocation): Promise<AddTransactionResponse>;
     waitForTransaction(txHash: any, retryInterval?: any): Promise<void>;
     waitForTx(txHash: any, retryInterval?: any): Promise<void>;
+    declareContract(): Promise<AddTransactionResponse>;
+    _populateTransaction(tx: any): Promise<any>;
     get baseUrl(): string;
     get gatewayUrl(): string;
     get feederGatewayUrl(): string;
