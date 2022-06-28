@@ -96,13 +96,13 @@ export class RPCProvider implements ProviderInterface {
         }
         const _block = await this.request("starknet_getBlockByNumber", [_blockNumber, "FULL_TXN_AND_RECEIPTS"]);
         let transactions = [];
-        let receipts = [];
+        let transaction_receipts = [];
         for(const tx of _block.transactions) {
             const _tx = await this._populateTransaction({ transaction: tx });
             _tx.transaction_hash = tx.txn_hash;
             const lastTxIndex = transactions.push(_tx);
 
-            receipts.push({
+            transaction_receipts.push({
                 transaction_index: lastTxIndex - 1,
                 events: tx.events,
                 transaction_hash: _tx.transaction_hash
@@ -111,7 +111,7 @@ export class RPCProvider implements ProviderInterface {
         return {
             ..._block,
             transactions,
-            receipts
+            transaction_receipts
         };
     }
 
