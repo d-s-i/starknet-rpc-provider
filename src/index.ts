@@ -1,15 +1,19 @@
 import { RequestManager, HTTPTransport, Client } from "@open-rpc/client-js";
+import { BigNumber } from "ethers";
 import { BigNumberish } from "starknet/utils/number";
 import { getSelectorFromName } from "starknet/utils/hash";
 import { 
     AddTransactionResponse, 
     Call, 
     CallContractResponse, 
+    DeclareTransaction, 
     DeployContractPayload, 
+    DeployTransaction, 
     GetContractAddressesResponse, 
     GetTransactionStatusResponse, 
     GetTransactionTraceResponse, 
     Invocation, 
+    InvokeFunctionTransaction, 
     ProviderInterface, 
     TransactionReceiptResponse 
 } from "starknet";
@@ -78,7 +82,7 @@ export class RPCProvider implements ProviderInterface {
         throw new Error("RPCProvider::getTransactionStatus - Function not implemented yet");
     }
 
-    async getTransactionReceipt({ txHash, txId, }: { txHash?: BigNumberish; txId?: BigNumberish; }): Promise<TransactionReceiptResponse> {
+    async getTransactionReceipt(txHash: BigNumberish): Promise<TransactionReceiptResponse> {
         const receipt = await this.request("starknet_getTransactionReceipt", [txHash]);
         return receipt;
     }
@@ -94,10 +98,15 @@ export class RPCProvider implements ProviderInterface {
         let transactions = [];
         let transaction_receipts = [];
         for(const txHash of _block.transactions) {
-            const tx = await this.getTransaction(txHash);
+
+            const tx = await this.getTransaction(txHash);            
             const receipt = await this.getTransactionReceipt({ txHash });
-            transactions.push(tx);
-            transaction_receipts.push(receipt);
+
+            const transactionsArrLength = transactions.push(tx);
+            transaction_receipts.push({
+                ...receipt,
+                transaction_index: transactionsArrLength - 1
+            });
         }
         return {
             ..._block,
@@ -106,11 +115,39 @@ export class RPCProvider implements ProviderInterface {
         };
     }
 
+    async getPendingTransactions() {
+        const pendingTxs = await this.request("starknet_pendingTransactions", []);
+        return pendingTxs;
+    }
+
+    /**
+     * Properties missing: 
+     * ANY TRANSACTIONS:
+     * status, block_hash, block_number, transaction_index
+     * INVOKE TRANSCACTIONS:
+     * transaction.entry_point_type (partial), transaction.signature
+     * DEPLOY TRANSACTION:
+     * transaction.contract_address_salt, transaction.constructor_calldata
+     */
     async getTransaction(txHash: BigNumberish) {
-        const transaction = await this.request("starknet_getTransactionByHash", [txHash]);
-        transaction.transaction_hash = transaction.txn_hash;
-        delete transaction.txn_hash;
+        const _transaction = await this.request("starknet_getTransactionByHash", [txHash]);
+        _transaction.transaction_hash = _transaction.txn_hash;
+        delete _transaction.txn_hash;
+        const transaction = await this._populateTransaction({
+            transaction: _transaction,
+            transaction_hash: _transaction.transaction_hash,
+        });
+
         return transaction;
+    }
+
+    async getClassHashAt(contractAddress: string) {
+        return await this.request("starknet_getClassHashAt", [contractAddress]);
+    }
+
+    async getClassAt(contractAddress: string) {
+        const res = await this.request("starknet_getClassAt", [contractAddress]);
+        return res;
     }
 
     async getTransactionTrace(txHash: BigNumberish): Promise<GetTransactionTraceResponse> {
@@ -124,6 +161,7 @@ export class RPCProvider implements ProviderInterface {
 
     async deployContract(payload: DeployContractPayload): Promise<AddTransactionResponse> {
         throw new Error("RPCProvider::deployContract - Function not implemented yet");
+        // const tx = await this.request("starknet_addDeployTransaction")
     }
 
     async invokeFunction(invocation: Invocation): Promise<AddTransactionResponse> {
@@ -136,6 +174,83 @@ export class RPCProvider implements ProviderInterface {
 
     async waitForTx(txHash: any, retryInterval?: any): Promise<void> {
         throw new Error("RPCProvider::waitForTx - Deprecated, use waitForTransaction instead");
+    }
+
+    async declareContract(): Promise<AddTransactionResponse> {
+        throw new Error(`RPCProvider::declareContract - Function not implemented yet`);
+    }
+
+    async _populateTransaction(tx: any) {
+        console.log("tx", tx);
+        const contractClass = await this.getClassAt(tx.transaction.contract_address);
+        const entryPointSelector = tx.transaction.entry_point_selector;
+        console.log("entryPointSelector", entryPointSelector);
+        console.log(`CONSTRUCTOR: `, contractClass.entry_points_by_type.CONSTRUCTOR);
+        console.log(`EXTERNAL: `, contractClass.entry_points_by_type.EXTERNAL);
+        console.log(`L1_HANDLER: `, contractClass.entry_points_by_type.L1_HANDLER);
+        // let isExternal = false;
+        // let isConstructor = false;
+        // let isL1Handler = false;
+        // let isDeploy = false;
+
+        // if(entryPointSelector) {
+        //     contractClass.entry_points_by_type.EXTERNAL.forEach((entrypoint: { offset: string, selector: string }) => {
+        //         if(BigNumber.from(entrypoint.selector).eq(entryPointSelector)) {
+        //             isExternal = true;
+        //         }
+        //     });
+    
+        //     contractClass.entry_points_by_type.CONSTRUCTOR.forEach((entrypoint: { offset: string, selector: string }) => {
+        //         if(BigNumber.from(entrypoint.selector).eq(entryPointSelector)) {
+        //             isConstructor = true;
+        //         }
+        //     });
+    
+        //     contractClass.entry_points_by_type.L1_HANDLER.forEach((entrypoint: { offset: string, selector: string }) => {
+        //         if(BigNumber.from(entrypoint.selector).eq(entryPointSelector)) {
+        //             isL1Handler = true;
+        //         }
+        //     });
+        // } else {
+        //     isDeploy = true;
+        // }
+
+        // if(isExternal) {
+        //     tx.transaction.entry_point_type = "EXTERNAL";
+        //     return {
+        //         ...tx,
+        //         type: "INVOKE_FUNCTION"
+        //     };
+        // } else if(isL1Handler) {
+        //     tx.transaction.entry_point_type = "L1_HANDLER";
+        //     return {
+        //         ...tx,
+        //         type: "DECLARE"
+        //     };
+        // } else if(isConstructor) {
+        //     tx.transaction.entry_point_type = "CONSTRUCTOR";
+        //     return {
+        //         ...tx,
+        //         type: "DEPLOY"
+        //     };
+        // } else {
+        //     console.log("NOT IN ANY CASE", );
+        // }
+
+        if(tx.transaction.entry_point_selector) {
+            tx.transaction.entry_point_type = "EXTERNAL";
+            return {
+                ...tx,
+                type: "INVOKE_FUNCTION"
+            }
+        } else {
+            const contractClassHash = await this.getClassHashAt(tx.transaction.contract_address);
+            tx.transaction.class_hash = contractClassHash
+            return {
+                ...tx,
+                type: "DEPLOY"
+            };
+        }
     }
     
     get baseUrl() {
