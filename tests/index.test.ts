@@ -13,11 +13,11 @@ describe("RPCProvider", function() {
         // const _block = await provider.request("starknet_getBlockByNumber", [211111, "FULL_TXN_AND_RECEIPTS"]);
         // console.log("block", _block);
         
-        // const rpcBlock = await provider.getBlock(211111);
-        // console.log("block from rpc: ", rpcBlock);
+        const rpcBlock = await provider.getBlock(254228);
+        console.log("block from rpc: ", rpcBlock);
 
-        const block = await defaultProvider.getBlock(211111);
-        console.log("block from defaultProvider", block);
+        // const block = await defaultProvider.getBlock(211111);
+        // console.log("block from defaultProvider", block);
         // console.log("block from defaultProvider", block.transactions[0]);
     });
     

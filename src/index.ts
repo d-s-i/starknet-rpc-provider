@@ -20,6 +20,8 @@ import {
 import { StarknetChainId } from "starknet/constants";
 import { BlockIdentifier } from "starknet/dist/provider/utils";
 
+import { StringMap } from "./types";
+
 export class RPCProvider implements ProviderInterface {
 
     private _transport: HTTPTransport;
@@ -138,7 +140,7 @@ export class RPCProvider implements ProviderInterface {
             transaction_hash: _transaction.transaction_hash,
         });
 
-        return transaction;
+        return transaction as any;
     }
 
     async getClassHashAt(contractAddress: string) {
@@ -180,7 +182,7 @@ export class RPCProvider implements ProviderInterface {
         throw new Error(`RPCProvider::declareContract - Function not implemented yet`);
     }
 
-    async _populateTransaction(tx: any) {
+    async _populateTransaction(tx: { transaction: any, [key: string]: any }) {
         // console.log("tx", tx);
         // const contractClass = await this.getClassAt(tx.transaction.contract_address);
         // const entryPointSelector = tx.transaction.entry_point_selector;
@@ -237,20 +239,30 @@ export class RPCProvider implements ProviderInterface {
         //     console.log("NOT IN ANY CASE", );
         // }
 
+        let finalTransaction;
         if(tx.transaction.entry_point_selector) {
             tx.transaction.entry_point_type = "EXTERNAL";
-            return {
+            finalTransaction = {
                 ...tx,
                 type: "INVOKE_FUNCTION"
-            }
-        } else {
-            const contractClassHash = await this.getClassHashAt(tx.transaction.contract_address);
-            tx.transaction.class_hash = contractClassHash
-            return {
-                ...tx,
-                type: "DEPLOY"
             };
+        } else {
+            if(tx.transaction.contract_address) {
+                const contractClassHash = await this.getClassHashAt(tx.transaction.contract_address);
+                tx.transaction.class_hash = contractClassHash
+                finalTransaction = {
+                    ...tx,
+                    type: "DEPLOY"
+                };
+            } else {
+                finalTransaction = {
+                    ...tx,
+                    type: "DECLARE"
+                };
+            }
         }
+
+        return finalTransaction as StringMap;
     }
     
     get baseUrl() {
