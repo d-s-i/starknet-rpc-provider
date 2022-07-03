@@ -102,7 +102,7 @@ export class RPCProvider implements ProviderInterface {
         for(const tx of _block.transactions) {
             const _tx = await this._populateTransaction({ transaction: tx });
             _tx.transaction_hash = tx.txn_hash;
-            const lastTxIndex = transactions.push(_tx);
+            const lastTxIndex = transactions.push(_tx.transaction);
 
             transaction_receipts.push({
                 transaction_index: lastTxIndex - 1,

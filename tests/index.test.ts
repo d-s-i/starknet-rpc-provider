@@ -16,8 +16,8 @@ describe("RPCProvider", function() {
         const rpcBlock = await provider.getBlock(254228);
         console.log("block from rpc: ", rpcBlock);
 
-        // const block = await defaultProvider.getBlock(211111);
-        // console.log("block from defaultProvider", block);
+        const block = await defaultProvider.getBlock(254228);
+        console.log("block from defaultProvider", block);
         // console.log("block from defaultProvider", block.transactions[0]);
     });
     
