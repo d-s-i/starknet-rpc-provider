@@ -2,7 +2,6 @@ import { BigNumberish } from "starknet/utils/number";
 import { AddTransactionResponse, Call, CallContractResponse, DeployContractPayload, GetContractAddressesResponse, GetTransactionTraceResponse, Invocation, ProviderInterface, TransactionReceiptResponse } from "starknet";
 import { StarknetChainId } from "starknet/constants";
 import { BlockIdentifier } from "starknet/dist/provider/utils";
-import { StringMap } from "./types";
 export declare class RPCProvider implements ProviderInterface {
     private _transport;
     private _client;
@@ -44,10 +43,7 @@ export declare class RPCProvider implements ProviderInterface {
     waitForTransaction(txHash: any, retryInterval?: any): Promise<void>;
     waitForTx(txHash: any, retryInterval?: any): Promise<void>;
     declareContract(): Promise<AddTransactionResponse>;
-    _populateTransaction(tx: {
-        transaction: any;
-        [key: string]: any;
-    }): Promise<StringMap>;
+    _populateTransaction(tx: any): Promise<void>;
     get baseUrl(): string;
     get gatewayUrl(): string;
     get feederGatewayUrl(): string;

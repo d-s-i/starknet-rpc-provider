@@ -9,17 +9,17 @@ const provider = new RPCProvider(process.env.NODE_URL!, "testnet"); // declare t
 
 describe("RPCProvider", function() {
 
-    it("`getBlock` from RPC and defaultProvider return same values", async function() {
-        // const _block = await provider.request("starknet_getBlockByNumber", [211111, "FULL_TXN_AND_RECEIPTS"]);
-        // console.log("block", _block);
+    // it("`getBlock` from RPC and defaultProvider return same values", async function() {
+    //     // const _block = await provider.request("starknet_getBlockByNumber", [211111, "FULL_TXN_AND_RECEIPTS"]);
+    //     // console.log("block", _block);
         
-        const rpcBlock = await provider.getBlock(254228);
-        console.log("block from rpc: ", rpcBlock);
+    //     const rpcBlock = await provider.getBlock(254228);
+    //     console.log("block from rpc: ", rpcBlock);
 
-        const block = await defaultProvider.getBlock(254228);
-        console.log("block from defaultProvider", block);
-        // console.log("block from defaultProvider", block.transactions[0]);
-    });
+    //     const block = await defaultProvider.getBlock(254228);
+    //     console.log("block from defaultProvider", block);
+    //     // console.log("block from defaultProvider", block.transactions[0]);
+    // });
     
     // it("Call a contract with a blockIdentifier", async function() {
     //     const res = await provider.callContract({
@@ -46,14 +46,14 @@ describe("RPCProvider", function() {
     //     console.log("defaultProvider invokeTx", invokeTx2);
     // });
 
-    // it("`getTransaction` from RPC and defaultProvider return same values for DEPLOY txs", async function() {
-    //     const deployTx = await provider.getTransaction("0x5e0831274d145eaa3a3ba5346fd376f68aacb910ad3c2609753fdeb326f31fc");
-    //     console.log("deployTx via provider", deployTx);
+    it("`getTransaction` from RPC and defaultProvider return same values for DEPLOY txs", async function() {
+        const deployTx = await provider.getTransaction("0x5e0831274d145eaa3a3ba5346fd376f68aacb910ad3c2609753fdeb326f31fc");
+        console.log("deployTx via provider", deployTx);
 
-    //     const deployTx2 = await defaultProvider.getTransaction("0x5e0831274d145eaa3a3ba5346fd376f68aacb910ad3c2609753fdeb326f31fc");
-    //     console.log("defaultProvider deployTx", deployTx2);
+        const deployTx2 = await defaultProvider.getTransaction("0x5e0831274d145eaa3a3ba5346fd376f68aacb910ad3c2609753fdeb326f31fc");
+        console.log("defaultProvider deployTx", deployTx2);
 
-    // });
+    });
 
     // it("Get Class Hash", async function() {
     //     const res = await provider.getClassHashAt("0x174776ba232281a770545f3d487e70eeb35872bd21c744a8077c8e6c0201b88");

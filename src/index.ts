@@ -100,14 +100,14 @@ export class RPCProvider implements ProviderInterface {
         let transactions = [];
         let transaction_receipts = [];
         for(const tx of _block.transactions) {
-            const _tx = await this._populateTransaction({ transaction: tx });
-            _tx.transaction_hash = tx.txn_hash;
-            const lastTxIndex = transactions.push(_tx.transaction);
+            await this._populateTransaction(tx);
+            tx.transaction_hash = tx.txn_hash;
+            const lastTxIndex = transactions.push(tx);
 
             transaction_receipts.push({
                 transaction_index: lastTxIndex - 1,
                 events: tx.events,
-                transaction_hash: _tx.transaction_hash
+                transaction_hash: tx.transaction_hash
             });
         }
         return {
@@ -135,12 +135,11 @@ export class RPCProvider implements ProviderInterface {
         const _transaction = await this.request("starknet_getTransactionByHash", [txHash]);
         _transaction.transaction_hash = _transaction.txn_hash;
         delete _transaction.txn_hash;
-        const transaction = await this._populateTransaction({
-            transaction: _transaction,
-            transaction_hash: _transaction.transaction_hash,
-        });
+        await this._populateTransaction(_transaction);
 
-        return transaction as any;
+        return {
+            transaction: _transaction,
+        } as any;
     }
 
     async getClassHashAt(contractAddress: string) {
@@ -182,7 +181,7 @@ export class RPCProvider implements ProviderInterface {
         throw new Error(`RPCProvider::declareContract - Function not implemented yet`);
     }
 
-    async _populateTransaction(tx: { transaction: any, [key: string]: any }) {
+    async _populateTransaction(tx: any) {
         // console.log("tx", tx);
         // const contractClass = await this.getClassAt(tx.transaction.contract_address);
         // const entryPointSelector = tx.transaction.entry_point_selector;
@@ -239,30 +238,19 @@ export class RPCProvider implements ProviderInterface {
         //     console.log("NOT IN ANY CASE", );
         // }
 
-        let finalTransaction;
-        if(tx.transaction.entry_point_selector) {
-            tx.transaction.entry_point_type = "EXTERNAL";
-            finalTransaction = {
-                ...tx,
-                type: "INVOKE_FUNCTION"
-            };
+        if(tx.entry_point_selector) {
+            tx.entry_point_type = "EXTERNAL";
+            tx.type = "INVOKE_FUNCTION";
         } else {
-            if(tx.transaction.contract_address) {
-                const contractClassHash = await this.getClassHashAt(tx.transaction.contract_address);
-                tx.transaction.class_hash = contractClassHash
-                finalTransaction = {
-                    ...tx,
-                    type: "DEPLOY"
-                };
+            if(tx.contract_address) {
+                const contractClassHash = await this.getClassHashAt(tx.contract_address);
+                tx.class_hash = contractClassHash;
+                tx.type = "DEPLOY";
+
             } else {
-                finalTransaction = {
-                    ...tx,
-                    type: "DECLARE"
-                };
+                tx.type = "DECLARE";
             }
         }
-
-        return finalTransaction as StringMap;
     }
     
     get baseUrl() {
