@@ -69,9 +69,9 @@ export class RPCProvider implements ProviderInterface {
         } else { blockHash = options.blockIdentifier }
         
         const _res = await this.request("starknet_call", [{
-            contract_address: invokeTransaction.contractAddress,
-            entry_point_selector: getSelectorFromName(invokeTransaction.entrypoint),
-            calldata: invokeTransaction.calldata || []
+            contract_address: BigNumber.from(invokeTransaction.contractAddress).toHexString(),
+            entry_point_selector: BigNumber.from(getSelectorFromName(invokeTransaction.entrypoint)).toHexString(),
+            calldata: invokeTransaction.calldata?.map(value => BigNumber.from(value).toHexString()) || []
         }, blockHash]);
         return { result: _res };
     }
