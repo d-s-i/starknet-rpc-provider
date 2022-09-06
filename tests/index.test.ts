@@ -4,8 +4,14 @@ import assert from "assert";
 import { RPCProvider } from "../src";
 import { Provider, defaultProvider } from "starknet";
 import { StandardProvider } from "../src/types";
+import { findTxWithProperties } from "./utils/index.test";
 
 const provider = new RPCProvider(process.env.NODE_URL!, "testnet"); // declare type to make sure providers are compatible with starknetjs
+
+const DEPLOY_TX_0 = "0x1bc2a00d66f3090ec66511f67f276323e0a26b2d324a61aed43e08ba092eb68";
+const DECLARE_TX_1 = "0x584b86f6a3dd9462ad1dbdb4c7a912d2d9de04cb9fdf7b4e0a8d0651a2c8e8c";
+const INVOKE_TX_0 = "0x2fa059893e469fc1a1f520a50d8b64a03ee913d71b9a33bf5b4a363ee142277";
+const INVOKE_TX_1 = "0x3796576e3b42c8dc9990dea4dee0e43e0df10e4895080efc00d8cf6414046ed";
 
 describe("RPCProvider", function() {
 
@@ -37,23 +43,34 @@ describe("RPCProvider", function() {
     //     console.log("res", res);
     // });
 
-    // it("`getTransaction` from RPC and defaultProvider return same values for INVOKE txs", async function() {
-    //     const hash = "0x705d6bf34d1dc0b0439f673e4f92f2fd0caa1871cb6325f521ea3aa576174c7";
-    //     const invokeTx = await provider.getTransaction(hash);
-    //     console.log("invokeTx", invokeTx);
+    it("`getTransaction` from RPC and defaultProvider return same values for INVOKE txs", async function() {
+        // const invokeTx = await findTxWithProperties([["type", "INVOKE_FUNCTION"], ["version", "0x1"]]);
+        // console.log("invokeTx", invokeTx);
+        const invokeTx = await provider.getTransaction(INVOKE_TX_1);
+        console.log("invokeTx", invokeTx);
 
-    //     const invokeTx2 = await defaultProvider.getTransaction(hash);
-    //     console.log("defaultProvider invokeTx", invokeTx2);
-    // });
-
-    it("`getTransaction` from RPC and defaultProvider return same values for DEPLOY txs", async function() {
-        const deployTx = await provider.getTransaction("0x5e0831274d145eaa3a3ba5346fd376f68aacb910ad3c2609753fdeb326f31fc");
-        console.log("deployTx via provider", deployTx);
-
-        const deployTx2 = await defaultProvider.getTransaction("0x5e0831274d145eaa3a3ba5346fd376f68aacb910ad3c2609753fdeb326f31fc");
-        console.log("defaultProvider deployTx", deployTx2);
+        const invokeTx2 = await defaultProvider.getTransaction(INVOKE_TX_1);
+        console.log("defaultProvider invokeTx", invokeTx2);
 
     });
+
+    // it("`getTransaction` from RPC and defaultProvider return same values for DEPLOY txs", async function() {
+    //     const deployTx = await provider.getTransaction(DEPLOY_TX);
+    //     console.log("deployTx via RPC provider", deployTx);
+
+    //     const deployTx2 = await defaultProvider.getTransaction(DEPLOY_TX);
+    //     console.log("defaultProvider deployTx", deployTx2);
+
+    // });
+
+    // it("`getTransaction` from RPC and defaultProvider return same values for DECLARE txs", async function() {
+    //     const declareTx1 = await provider.getTransaction(DECLARE_TX);
+    //     console.log("deployTx via RPC provider", declareTx1);
+
+    //     const declareTx2 = await defaultProvider.getTransaction(DECLARE_TX);
+    //     console.log("defaultProvider deployTx", declareTx2);
+
+    // });
 
     // it("Get Class Hash", async function() {
     //     const res = await provider.getClassHashAt("0x174776ba232281a770545f3d487e70eeb35872bd21c744a8077c8e6c0201b88");

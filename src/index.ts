@@ -20,8 +20,6 @@ import {
 import { StarknetChainId } from "starknet/constants";
 import { BlockIdentifier } from "starknet/dist/provider/utils";
 
-import { StringMap } from "./types";
-
 export class RPCProvider implements ProviderInterface {
 
     private _transport: HTTPTransport;
@@ -100,8 +98,6 @@ export class RPCProvider implements ProviderInterface {
         let transactions = [];
         let transaction_receipts = [];
         for(const tx of _block.transactions) {
-            await this._populateTransaction(tx);
-            tx.transaction_hash = tx.txn_hash;
             const lastTxIndex = transactions.push(tx);
 
             transaction_receipts.push({
@@ -133,9 +129,6 @@ export class RPCProvider implements ProviderInterface {
      */
     async getTransaction(txHash: BigNumberish) {
         const _transaction = await this.request("starknet_getTransactionByHash", [txHash]);
-        _transaction.transaction_hash = _transaction.txn_hash;
-        delete _transaction.txn_hash;
-        await this._populateTransaction(_transaction);
 
         return {
             transaction: _transaction,
@@ -179,78 +172,6 @@ export class RPCProvider implements ProviderInterface {
 
     async declareContract(): Promise<AddTransactionResponse> {
         throw new Error(`RPCProvider::declareContract - Function not implemented yet`);
-    }
-
-    async _populateTransaction(tx: any) {
-        // console.log("tx", tx);
-        // const contractClass = await this.getClassAt(tx.transaction.contract_address);
-        // const entryPointSelector = tx.transaction.entry_point_selector;
-        // console.log("entryPointSelector", entryPointSelector);
-        // console.log(`CONSTRUCTOR: `, contractClass.entry_points_by_type.CONSTRUCTOR);
-        // console.log(`EXTERNAL: `, contractClass.entry_points_by_type.EXTERNAL);
-        // console.log(`L1_HANDLER: `, contractClass.entry_points_by_type.L1_HANDLER);
-        // let isExternal = false;
-        // let isConstructor = false;
-        // let isL1Handler = false;
-        // let isDeploy = false;
-
-        // if(entryPointSelector) {
-        //     contractClass.entry_points_by_type.EXTERNAL.forEach((entrypoint: { offset: string, selector: string }) => {
-        //         if(BigNumber.from(entrypoint.selector).eq(entryPointSelector)) {
-        //             isExternal = true;
-        //         }
-        //     });
-    
-        //     contractClass.entry_points_by_type.CONSTRUCTOR.forEach((entrypoint: { offset: string, selector: string }) => {
-        //         if(BigNumber.from(entrypoint.selector).eq(entryPointSelector)) {
-        //             isConstructor = true;
-        //         }
-        //     });
-    
-        //     contractClass.entry_points_by_type.L1_HANDLER.forEach((entrypoint: { offset: string, selector: string }) => {
-        //         if(BigNumber.from(entrypoint.selector).eq(entryPointSelector)) {
-        //             isL1Handler = true;
-        //         }
-        //     });
-        // } else {
-        //     isDeploy = true;
-        // }
-
-        // if(isExternal) {
-        //     tx.transaction.entry_point_type = "EXTERNAL";
-        //     return {
-        //         ...tx,
-        //         type: "INVOKE_FUNCTION"
-        //     };
-        // } else if(isL1Handler) {
-        //     tx.transaction.entry_point_type = "L1_HANDLER";
-        //     return {
-        //         ...tx,
-        //         type: "DECLARE"
-        //     };
-        // } else if(isConstructor) {
-        //     tx.transaction.entry_point_type = "CONSTRUCTOR";
-        //     return {
-        //         ...tx,
-        //         type: "DEPLOY"
-        //     };
-        // } else {
-        //     console.log("NOT IN ANY CASE", );
-        // }
-
-        if(tx.entry_point_selector) {
-            tx.entry_point_type = "EXTERNAL";
-            tx.type = "INVOKE_FUNCTION";
-        } else {
-            if(tx.contract_address) {
-                const contractClassHash = await this.getClassHashAt(tx.contract_address);
-                tx.class_hash = contractClassHash;
-                tx.type = "DEPLOY";
-
-            } else {
-                tx.type = "DECLARE";
-            }
-        }
     }
     
     get baseUrl() {
