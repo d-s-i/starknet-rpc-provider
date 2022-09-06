@@ -43,7 +43,6 @@ export declare class RPCProvider implements ProviderInterface {
     waitForTransaction(txHash: any, retryInterval?: any): Promise<void>;
     waitForTx(txHash: any, retryInterval?: any): Promise<void>;
     declareContract(): Promise<AddTransactionResponse>;
-    _populateTransaction(tx: any): Promise<void>;
     get baseUrl(): string;
     get gatewayUrl(): string;
     get feederGatewayUrl(): string;
