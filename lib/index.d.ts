@@ -1,7 +1,8 @@
 import { BigNumberish } from "starknet/utils/number";
-import { AddTransactionResponse, Call, CallContractResponse, DeployContractPayload, GetContractAddressesResponse, GetTransactionTraceResponse, Invocation, ProviderInterface, TransactionReceiptResponse } from "starknet";
-import { StarknetChainId } from "starknet/constants";
+import { Call, CallContractResponse, DeclareContractPayload, DeclareContractResponse, DeployContractPayload, DeployContractResponse, EstimateFeeResponse, GetTransactionReceiptResponse, Invocation, InvocationsDetails, InvokeFunctionResponse, ProviderInterface } from "starknet";
 import { BlockIdentifier } from "starknet/dist/provider/utils";
+import { StarknetChainId } from "starknet/dist/constants";
+import { GetTransactionStatusResponse, GetTransactionTraceResponse } from "starknet/dist/types/api";
 export declare class RPCProvider implements ProviderInterface {
     private _transport;
     private _client;
@@ -11,38 +12,56 @@ export declare class RPCProvider implements ProviderInterface {
     private _chainId;
     constructor(baseUrl: string, chain: "mainnet" | "testnet");
     request(method: string, params: any[]): Promise<any>;
-    getContractAddresses(): Promise<GetContractAddressesResponse>;
+    getChainId(): Promise<StarknetChainId>;
+    getEstimateFee(invocation: Invocation, blockIdentifier?: BlockIdentifier, details?: InvocationsDetails): Promise<EstimateFeeResponse>;
     getStorageAt(contractAddress: string, key: number, blockIdentifier?: BlockIdentifier): Promise<object>;
-    callContract(invokeTransaction: Call, options?: {
-        blockIdentifier: BlockIdentifier;
-    }): Promise<CallContractResponse>;
+    callContract(invokeTransaction: Call, blockIdentifier?: BlockIdentifier): Promise<CallContractResponse>;
     getLatestBlockNumber(): Promise<any>;
-    getTransactionStatus(txHash: BigNumberish): Promise<any>;
-    getTransactionReceipt(txHash: BigNumberish): Promise<TransactionReceiptResponse>;
-    getBlock(blockNumber: number | "latest"): Promise<any>;
+    getTransactionStatus(txHash: BigNumberish): Promise<GetTransactionStatusResponse>;
+    getTransactionReceipt(txHash: BigNumberish): Promise<GetTransactionReceiptResponse>;
+    getBlock(blockIdentifier?: BlockIdentifier): Promise<any>;
+    getBlockWithTxs(blockIdentifier?: BlockIdentifier): Promise<any>;
     getPendingTransactions(): Promise<any>;
     /**
+     * @notice by default querying `starknet_getTransactionByHash` and not `starknet_getTransactionByBlockIdAndIndex`
+     *
      * Properties missing:
-     * ANY TRANSACTIONS:
-     * status, block_hash, block_number, transaction_index
-     * INVOKE TRANSCACTIONS:
-     * transaction.entry_point_type (partial), transaction.signature
-     * DEPLOY TRANSACTION:
-     * transaction.contract_address_salt, transaction.constructor_calldata
      */
     getTransaction(txHash: BigNumberish): Promise<any>;
-    getClassHashAt(contractAddress: string): Promise<any>;
-    getClassAt(contractAddress: string): Promise<any>;
+    /**
+     * @notice Get the contract class hash in the given block for the contract deployed at the given address
+     *
+     * @param contractAddress
+     * @returns
+     */
+    getClassHashAt(contractAddress: string, blockIdentifier?: BlockIdentifier): Promise<any>;
+    /**
+     * @notice Get the contract class definition in the given block at the given address
+     *
+     * @param contractAddress - The contract address you want to class at
+     * @param blockIdentifier
+     * @returns
+     */
+    getClassAt(contractAddress: string, blockIdentifier?: BlockIdentifier): Promise<any>;
+    /**
+     * @notice Get the contract class definition in the given block associated with the given hash
+     * @param classHash
+     * @param blockIdentifier
+     * @returns
+     */
+    getClass(classHash: string, blockIdentifier?: BlockIdentifier): Promise<any>;
+    getBlockTransactionCount(blockIdentifier?: BlockIdentifier): Promise<any>;
+    getStateUpdate(blockIdentifier?: BlockIdentifier): Promise<any>;
     getTransactionTrace(txHash: BigNumberish): Promise<GetTransactionTraceResponse>;
-    getCode(contractAddress: string): Promise<{
+    getCode(contractAddress: string, blockIdentifier?: BlockIdentifier): Promise<{
         bytecode: any;
         abi: any;
     }>;
-    deployContract(payload: DeployContractPayload): Promise<AddTransactionResponse>;
-    invokeFunction(invocation: Invocation): Promise<AddTransactionResponse>;
-    waitForTransaction(txHash: any, retryInterval?: any): Promise<void>;
-    waitForTx(txHash: any, retryInterval?: any): Promise<void>;
-    declareContract(): Promise<AddTransactionResponse>;
+    deployContract(payload: DeployContractPayload): Promise<DeployContractResponse>;
+    invokeFunction(invocation: Invocation): Promise<InvokeFunctionResponse>;
+    waitForTransaction(txHash: any, retryInterval?: number): Promise<void>;
+    declareContract(payload: DeclareContractPayload): Promise<DeclareContractResponse>;
+    _getBlockIdentifierObj(blockIdentifier?: BlockIdentifier): any;
     get baseUrl(): string;
     get gatewayUrl(): string;
     get feederGatewayUrl(): string;

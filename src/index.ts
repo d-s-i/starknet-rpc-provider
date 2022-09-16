@@ -3,22 +3,22 @@ import { BigNumber } from "ethers";
 import { BigNumberish } from "starknet/utils/number";
 import { getSelectorFromName } from "starknet/utils/hash";
 import { 
-    AddTransactionResponse, 
     Call, 
     CallContractResponse, 
-    DeclareTransaction, 
+    DeclareContractPayload, 
+    DeclareContractResponse, 
     DeployContractPayload, 
-    DeployTransaction, 
-    GetContractAddressesResponse, 
-    GetTransactionStatusResponse, 
-    GetTransactionTraceResponse, 
+    DeployContractResponse, 
+    EstimateFeeResponse, 
+    GetTransactionReceiptResponse, 
     Invocation, 
-    InvokeFunctionTransaction, 
-    ProviderInterface, 
-    TransactionReceiptResponse 
+    InvocationsDetails, 
+    InvokeFunctionResponse, 
+    ProviderInterface
 } from "starknet";
-import { StarknetChainId } from "starknet/constants";
-import { BlockIdentifier } from "starknet/dist/provider/utils";
+import { Block, BlockIdentifier } from "starknet/dist/provider/utils";
+import { StarknetChainId } from "starknet/dist/constants";
+import { GetContractAddressesResponse, GetTransactionStatusResponse, GetTransactionTraceResponse } from "starknet/dist/types/api";
 
 export class RPCProvider implements ProviderInterface {
 
@@ -47,30 +47,36 @@ export class RPCProvider implements ProviderInterface {
         return result;
     }
 
-    async getContractAddresses(): Promise<GetContractAddressesResponse> {
-        throw new Error("RPCProvider::getContractAddresses - Function not implemented yet");
+    async getChainId(): Promise<StarknetChainId> {
+        const res = await this.request("starknet_chainId", []);
+        return res;
+    }
+
+    async getEstimateFee(invocation: Invocation, blockIdentifier?: BlockIdentifier, details?: InvocationsDetails): Promise<EstimateFeeResponse> {
+        const res = await this.request("starknet_estimateFee", [invocation, this._getBlockIdentifierObj(blockIdentifier), details]);
+        return res;
     }
 
     async getStorageAt(contractAddress: string, key: number, blockIdentifier?: BlockIdentifier): Promise<object> {
-        throw new Error("RPCProvider::getStorageAt - Function not implemented yet");
+        return await this.request("starknet_getStorageAt", [contractAddress, key, this._getBlockIdentifierObj(blockIdentifier)])
     }
 
-    async callContract(invokeTransaction: Call, options?: { blockIdentifier: BlockIdentifier; }): Promise<CallContractResponse> {
-        let blockHash;
-        if(
-            !options?.blockIdentifier || 
-            (typeof(options.blockIdentifier) === "number" || options.blockIdentifier === "pending" || options.blockIdentifier === "latest")
-        ) {
-            const latestBlockNumber = typeof(options?.blockIdentifier) === "number" ? options.blockIdentifier : await this.getLatestBlockNumber();
-            const latestBlock = await this.getBlock(latestBlockNumber);
-            blockHash = latestBlock.block_hash;
-        } else { blockHash = options.blockIdentifier }
+    async callContract(invokeTransaction: Call, blockIdentifier?: BlockIdentifier): Promise<CallContractResponse> {
+        // let blockHash = blockIdentifier;
+        // if(
+        //     !blockIdentifier || 
+        //     (typeof(blockIdentifier) === "number" || blockIdentifier === "pending" || blockIdentifier === "latest")
+        // ) {
+        //     const latestBlockNumber = typeof(blockIdentifier) === "number" ? blockIdentifier : await this.getLatestBlockNumber();
+        //     const latestBlock = await this.getBlock(latestBlockNumber);
+        //     blockHash = latestBlock.block_hash;
+        // }
         
         const _res = await this.request("starknet_call", [{
             contract_address: BigNumber.from(invokeTransaction.contractAddress).toHexString(),
             entry_point_selector: BigNumber.from(getSelectorFromName(invokeTransaction.entrypoint)).toHexString(),
             calldata: invokeTransaction.calldata?.map(value => BigNumber.from(value).toHexString()) || []
-        }, blockHash]);
+        }, this._getBlockIdentifierObj(blockIdentifier)]);
         return { result: _res };
     }
     
@@ -78,39 +84,23 @@ export class RPCProvider implements ProviderInterface {
         return this.request("starknet_blockNumber", []);
     }
 
-    async getTransactionStatus(txHash: BigNumberish): Promise<any /*GetTransactionStatusResponse*/> {
+    async getTransactionStatus(txHash: BigNumberish): Promise<GetTransactionStatusResponse> {
         throw new Error("RPCProvider::getTransactionStatus - Function not implemented yet");
     }
 
-    async getTransactionReceipt(txHash: BigNumberish): Promise<TransactionReceiptResponse> {
+    async getTransactionReceipt(txHash: BigNumberish): Promise<GetTransactionReceiptResponse> {
         const receipt = await this.request("starknet_getTransactionReceipt", [txHash]);
         return receipt;
     }
     
-    async getBlock(blockNumber: number | "latest") {
-        let _blockNumber;
-        if(blockNumber === "latest") {
-            _blockNumber = await this.getLatestBlockNumber();
-        } else {
-            _blockNumber = +blockNumber;
-        }
-        const _block = await this.request("starknet_getBlockByNumber", [_blockNumber, "FULL_TXN_AND_RECEIPTS"]);
-        let transactions = [];
-        let transaction_receipts = [];
-        for(const tx of _block.transactions) {
-            const lastTxIndex = transactions.push(tx);
+    async getBlock(blockIdentifier?: BlockIdentifier) {
+        const _block = await this.request("starknet_getBlockWithTxHashes", [this._getBlockIdentifierObj(blockIdentifier)]);
+        return _block;
+    }
 
-            transaction_receipts.push({
-                transaction_index: lastTxIndex - 1,
-                events: tx.events,
-                transaction_hash: tx.transaction_hash
-            });
-        }
-        return {
-            ..._block,
-            transactions,
-            transaction_receipts
-        };
+    async getBlockWithTxs(blockIdentifier?: BlockIdentifier) {
+        const _block = await this.request("starknet_getBlockWithTxs", [this._getBlockIdentifierObj(blockIdentifier)]);
+        return _block;
     }
 
     async getPendingTransactions() {
@@ -119,59 +109,91 @@ export class RPCProvider implements ProviderInterface {
     }
 
     /**
+     * @notice by default querying `starknet_getTransactionByHash` and not `starknet_getTransactionByBlockIdAndIndex`
+     * 
      * Properties missing: 
-     * ANY TRANSACTIONS:
-     * status, block_hash, block_number, transaction_index
-     * INVOKE TRANSCACTIONS:
-     * transaction.entry_point_type (partial), transaction.signature
-     * DEPLOY TRANSACTION:
-     * transaction.contract_address_salt, transaction.constructor_calldata
      */
     async getTransaction(txHash: BigNumberish) {
         const _transaction = await this.request("starknet_getTransactionByHash", [txHash]);
 
-        return {
-            transaction: _transaction,
-        } as any;
+        return _transaction;
     }
 
-    async getClassHashAt(contractAddress: string) {
-        return await this.request("starknet_getClassHashAt", [contractAddress]);
+    /**
+     * @notice Get the contract class hash in the given block for the contract deployed at the given address
+     * 
+     * @param contractAddress 
+     * @returns 
+     */
+    async getClassHashAt(contractAddress: string, blockIdentifier?: BlockIdentifier) {
+        let _blockIdentifier = this._getBlockIdentifierObj(blockIdentifier);
+        return await this.request("starknet_getClassHashAt", [_blockIdentifier, contractAddress]);
     }
 
-    async getClassAt(contractAddress: string) {
-        const res = await this.request("starknet_getClassAt", [contractAddress]);
+    /**
+     * @notice Get the contract class definition in the given block at the given address
+     * 
+     * @param contractAddress - The contract address you want to class at
+     * @param blockIdentifier 
+     * @returns 
+     */
+    async getClassAt(contractAddress: string, blockIdentifier?: BlockIdentifier) {
+        let _blockIdentifier = this._getBlockIdentifierObj(blockIdentifier);
+        const res = await this.request("starknet_getClassAt", [_blockIdentifier, contractAddress]);
         return res;
     }
 
+    /**
+     * @notice Get the contract class definition in the given block associated with the given hash
+     * @param classHash 
+     * @param blockIdentifier 
+     * @returns 
+     */
+    async getClass(classHash: string, blockIdentifier?: BlockIdentifier) {
+        return await this.request("starknet_getClass", [this._getBlockIdentifierObj(blockIdentifier), classHash]);
+    }
+
+    async getBlockTransactionCount(blockIdentifier?: BlockIdentifier) {
+        return await this.request("starknet_getBlockTransactionCount", [this._getBlockIdentifierObj(blockIdentifier)]);
+    }
+
+    async getStateUpdate(blockIdentifier?: BlockIdentifier) {
+        return await this.request("starknet_getStateUpdate", [this._getBlockIdentifierObj(blockIdentifier)])
+    }
+    
     async getTransactionTrace(txHash: BigNumberish): Promise<GetTransactionTraceResponse> {
         throw new Error("RPCProvider::getTransactionTrace - Function not implemented yet");
     }
-
-    async getCode(contractAddress: string) {
+    
+    async getCode(contractAddress: string, blockIdentifier?: BlockIdentifier) {
         const { bytecode, abi: _abi } = await this.request("starknet_getCode", [contractAddress]);
         return { bytecode, abi: JSON.parse(_abi) };
     }
 
-    async deployContract(payload: DeployContractPayload): Promise<AddTransactionResponse> {
-        throw new Error("RPCProvider::deployContract - Function not implemented yet");
-        // const tx = await this.request("starknet_addDeployTransaction")
+    // TODO check response
+    async deployContract(payload: DeployContractPayload): Promise<DeployContractResponse> {
+        const res = await this.request("starknet_addDeployTransaction", [payload]);
+        return res;
     }
 
-    async invokeFunction(invocation: Invocation): Promise<AddTransactionResponse> {
-        throw new Error("RPCProvider::invokeFunction - Function not implemented yet");
+    async invokeFunction(invocation: Invocation): Promise<InvokeFunctionResponse> {
+        const res = await this.request("starknet_addInvokeTransaction", [invocation]);
+        return res;
     }
     
-    async waitForTransaction(txHash: any, retryInterval?: any): Promise<void> {
+    async waitForTransaction(txHash: any, retryInterval?: number): Promise<void> {
         throw new Error("RPCProvider::waitForTransaction - Function not implemented yet");
     }
 
-    async waitForTx(txHash: any, retryInterval?: any): Promise<void> {
-        throw new Error("RPCProvider::waitForTx - Deprecated, use waitForTransaction instead");
+    async declareContract(payload: DeclareContractPayload): Promise<DeclareContractResponse> {
+        const res = await this.request("starknet_addDeclareTransaction", [payload]);
+        return res;
     }
 
-    async declareContract(): Promise<AddTransactionResponse> {
-        throw new Error(`RPCProvider::declareContract - Function not implemented yet`);
+    _getBlockIdentifierObj(blockIdentifier?: BlockIdentifier) {
+        if(!blockIdentifier) return "latest";
+        if(blockIdentifier === "pending" || blockIdentifier === "latest") return blockIdentifier;
+        return typeof(blockIdentifier) === "string" ? { block_hash: blockIdentifier } : { block_number: blockIdentifier }
     }
     
     get baseUrl() {
