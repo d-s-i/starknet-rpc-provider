@@ -5,20 +5,24 @@ import { getSelectorFromName } from "starknet/utils/hash";
 import { 
     Call, 
     CallContractResponse, 
+    ContractClass, 
     DeclareContractPayload, 
     DeclareContractResponse, 
     DeployContractPayload, 
     DeployContractResponse, 
     EstimateFeeResponse, 
+    GetBlockResponse, 
+    GetCodeResponse, 
     GetTransactionReceiptResponse, 
+    GetTransactionResponse, 
     Invocation, 
     InvocationsDetails, 
     InvokeFunctionResponse, 
     ProviderInterface
 } from "starknet";
-import { Block, BlockIdentifier } from "starknet/dist/provider/utils";
+import { BlockIdentifier } from "starknet/dist/provider/utils";
 import { StarknetChainId } from "starknet/dist/constants";
-import { GetContractAddressesResponse, GetTransactionStatusResponse, GetTransactionTraceResponse } from "starknet/dist/types/api";
+import { GetTransactionStatusResponse, GetTransactionTraceResponse } from "starknet/dist/types/api";
 
 export class RPCProvider implements ProviderInterface {
 
@@ -57,21 +61,11 @@ export class RPCProvider implements ProviderInterface {
         return res;
     }
 
-    async getStorageAt(contractAddress: string, key: number, blockIdentifier?: BlockIdentifier): Promise<object> {
+    async getStorageAt(contractAddress: string, key: number, blockIdentifier?: BlockIdentifier): Promise<BigNumberish> {
         return await this.request("starknet_getStorageAt", [contractAddress, key, this._getBlockIdentifierObj(blockIdentifier)])
     }
 
     async callContract(invokeTransaction: Call, blockIdentifier?: BlockIdentifier): Promise<CallContractResponse> {
-        // let blockHash = blockIdentifier;
-        // if(
-        //     !blockIdentifier || 
-        //     (typeof(blockIdentifier) === "number" || blockIdentifier === "pending" || blockIdentifier === "latest")
-        // ) {
-        //     const latestBlockNumber = typeof(blockIdentifier) === "number" ? blockIdentifier : await this.getLatestBlockNumber();
-        //     const latestBlock = await this.getBlock(latestBlockNumber);
-        //     blockHash = latestBlock.block_hash;
-        // }
-        
         const _res = await this.request("starknet_call", [{
             contract_address: BigNumber.from(invokeTransaction.contractAddress).toHexString(),
             entry_point_selector: BigNumber.from(getSelectorFromName(invokeTransaction.entrypoint)).toHexString(),
@@ -93,7 +87,7 @@ export class RPCProvider implements ProviderInterface {
         return receipt;
     }
     
-    async getBlock(blockIdentifier?: BlockIdentifier) {
+    async getBlock(blockIdentifier?: BlockIdentifier): Promise<GetBlockResponse> {
         const _block = await this.request("starknet_getBlockWithTxHashes", [this._getBlockIdentifierObj(blockIdentifier)]);
         return _block;
     }
@@ -113,7 +107,7 @@ export class RPCProvider implements ProviderInterface {
      * 
      * Properties missing: 
      */
-    async getTransaction(txHash: BigNumberish) {
+    async getTransaction(txHash: BigNumberish): Promise<GetTransactionResponse> {
         const _transaction = await this.request("starknet_getTransactionByHash", [txHash]);
 
         return _transaction;
@@ -137,7 +131,7 @@ export class RPCProvider implements ProviderInterface {
      * @param blockIdentifier 
      * @returns 
      */
-    async getClassAt(contractAddress: string, blockIdentifier?: BlockIdentifier) {
+    async getClassAt(contractAddress: string, blockIdentifier?: BlockIdentifier): Promise<ContractClass> {
         let _blockIdentifier = this._getBlockIdentifierObj(blockIdentifier);
         const res = await this.request("starknet_getClassAt", [_blockIdentifier, contractAddress]);
         return res;
@@ -165,9 +159,9 @@ export class RPCProvider implements ProviderInterface {
         throw new Error("RPCProvider::getTransactionTrace - Function not implemented yet");
     }
     
-    async getCode(contractAddress: string, blockIdentifier?: BlockIdentifier) {
-        const { bytecode, abi: _abi } = await this.request("starknet_getCode", [contractAddress]);
-        return { bytecode, abi: JSON.parse(_abi) };
+    async getCode(contractAddress: string, blockIdentifier?: BlockIdentifier): Promise<GetCodeResponse> {
+        const res = await this.request("starknet_getCode", [contractAddress]);
+        return res;
     }
 
     // TODO check response

@@ -162,15 +162,15 @@ describe("RPCProvider", function() {
     //     console.log("defaultProvider deployTx", declareTx2);
     // });
 
-    it("Get Class Hash at block identifier", async function() {
-        const res = await provider.getClassHashAt("0x691bd65ac65f3d6b9001fe864246270d561ef95798e2b7d38dd7090bd201e4b");
-        console.log(res);
-    });
-
-    // it("Get Class at", async function() {
-    //     const contractClass = await provider.getClassAt("0x691bd65ac65f3d6b9001fe864246270d561ef95798e2b7d38dd7090bd201e4b")
-    //     console.log(contractClass);
+    // it("Get Class Hash at block identifier", async function() {
+    //     const res = await provider.getClassHashAt("0x691bd65ac65f3d6b9001fe864246270d561ef95798e2b7d38dd7090bd201e4b");
+    //     console.log(res);
     // });
+
+    it("Get Class at", async function() {
+        const contractClass = await provider.getClassAt("0x074ba76a4c8833eb98407f402453d63408bb598bd02e8f95ed5c3210d46f2cf0")
+        console.log(contractClass);
+    });
 
     // it("`getClass` - get class of normal contract", async function() {
     //     const contractAddress = "0x0691bd65ac65f3d6b9001fe864246270d561ef95798e2b7d38dd7090bd201e4b";

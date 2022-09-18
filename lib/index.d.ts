@@ -1,5 +1,5 @@
 import { BigNumberish } from "starknet/utils/number";
-import { Call, CallContractResponse, DeclareContractPayload, DeclareContractResponse, DeployContractPayload, DeployContractResponse, EstimateFeeResponse, GetTransactionReceiptResponse, Invocation, InvocationsDetails, InvokeFunctionResponse, ProviderInterface } from "starknet";
+import { Call, CallContractResponse, ContractClass, DeclareContractPayload, DeclareContractResponse, DeployContractPayload, DeployContractResponse, EstimateFeeResponse, GetBlockResponse, GetCodeResponse, GetTransactionReceiptResponse, GetTransactionResponse, Invocation, InvocationsDetails, InvokeFunctionResponse, ProviderInterface } from "starknet";
 import { BlockIdentifier } from "starknet/dist/provider/utils";
 import { StarknetChainId } from "starknet/dist/constants";
 import { GetTransactionStatusResponse, GetTransactionTraceResponse } from "starknet/dist/types/api";
@@ -14,12 +14,12 @@ export declare class RPCProvider implements ProviderInterface {
     request(method: string, params: any[]): Promise<any>;
     getChainId(): Promise<StarknetChainId>;
     getEstimateFee(invocation: Invocation, blockIdentifier?: BlockIdentifier, details?: InvocationsDetails): Promise<EstimateFeeResponse>;
-    getStorageAt(contractAddress: string, key: number, blockIdentifier?: BlockIdentifier): Promise<object>;
+    getStorageAt(contractAddress: string, key: number, blockIdentifier?: BlockIdentifier): Promise<BigNumberish>;
     callContract(invokeTransaction: Call, blockIdentifier?: BlockIdentifier): Promise<CallContractResponse>;
     getLatestBlockNumber(): Promise<any>;
     getTransactionStatus(txHash: BigNumberish): Promise<GetTransactionStatusResponse>;
     getTransactionReceipt(txHash: BigNumberish): Promise<GetTransactionReceiptResponse>;
-    getBlock(blockIdentifier?: BlockIdentifier): Promise<any>;
+    getBlock(blockIdentifier?: BlockIdentifier): Promise<GetBlockResponse>;
     getBlockWithTxs(blockIdentifier?: BlockIdentifier): Promise<any>;
     getPendingTransactions(): Promise<any>;
     /**
@@ -27,7 +27,7 @@ export declare class RPCProvider implements ProviderInterface {
      *
      * Properties missing:
      */
-    getTransaction(txHash: BigNumberish): Promise<any>;
+    getTransaction(txHash: BigNumberish): Promise<GetTransactionResponse>;
     /**
      * @notice Get the contract class hash in the given block for the contract deployed at the given address
      *
@@ -42,7 +42,7 @@ export declare class RPCProvider implements ProviderInterface {
      * @param blockIdentifier
      * @returns
      */
-    getClassAt(contractAddress: string, blockIdentifier?: BlockIdentifier): Promise<any>;
+    getClassAt(contractAddress: string, blockIdentifier?: BlockIdentifier): Promise<ContractClass>;
     /**
      * @notice Get the contract class definition in the given block associated with the given hash
      * @param classHash
@@ -53,10 +53,7 @@ export declare class RPCProvider implements ProviderInterface {
     getBlockTransactionCount(blockIdentifier?: BlockIdentifier): Promise<any>;
     getStateUpdate(blockIdentifier?: BlockIdentifier): Promise<any>;
     getTransactionTrace(txHash: BigNumberish): Promise<GetTransactionTraceResponse>;
-    getCode(contractAddress: string, blockIdentifier?: BlockIdentifier): Promise<{
-        bytecode: any;
-        abi: any;
-    }>;
+    getCode(contractAddress: string, blockIdentifier?: BlockIdentifier): Promise<GetCodeResponse>;
     deployContract(payload: DeployContractPayload): Promise<DeployContractResponse>;
     invokeFunction(invocation: Invocation): Promise<InvokeFunctionResponse>;
     waitForTransaction(txHash: any, retryInterval?: number): Promise<void>;
